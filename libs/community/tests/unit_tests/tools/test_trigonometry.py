@@ -3,6 +3,7 @@
 import json
 import math
 import pytest
+import asyncio
 
 from langchain_community.tools.trigonometry import TrigonometryTool
 
@@ -62,10 +63,11 @@ def test_dict_input_accepted():
     assert approx(out["result"], 0.5, tol=1e-6)
 
 def test_async_run():
-    import asyncio
     async def call():
         return await tool.arun('{"function": "sin", "value": 30, "unit": "degrees"}')
-    out_str = asyncio.get_event_loop().run_until_complete(call())
+    
+    # Use the modern asyncio.run() instead of the deprecated get_event_loop()
+    out_str = asyncio.run(call())
     out = parse(out_str)
     assert out["error"] is None
     assert approx(out["result"], 0.5, tol=1e-6)

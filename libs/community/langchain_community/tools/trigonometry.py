@@ -131,7 +131,7 @@ class TrigonometryTool(BaseTool):
             else:
                 result_unit = "radians"
         else:
-            # forward trig: keep same unit as input (radians) — but if input was degrees we return numeric result without 'unit'
+            # forward trig results are unitless ratios
             result_unit = None
 
         return {
@@ -153,30 +153,60 @@ class TrigonometryTool(BaseTool):
         return json.dumps(response)
 
     def _run(self, query: Union[str, Dict[str, Any]]) -> str:
+        """Synchronous execution entrypoint used by agents.
+
+        Args:
+            query: Either a JSON string or a dict with keys:
+                   'function': 'sin|cos|tan|asin|acos|atan',
+                   'value': a number,
+                   'unit': 'radians' or 'degrees' (optional).
+
+        Returns:
+            A JSON string containing the result of the computation,
+            including the original input and any errors.
         """
-        Synchronous execution entrypoint used by agents.
-        Accepts JSON string or dict and returns a JSON string output.
-        """
+        normalized = None
         try:
+            # Step 1: Normalize the input. This can raise a ValueError.
             normalized = self._normalize_input(query)
             func = normalized["function"]
             value = normalized["value"]
             unit = normalized["unit"]
 
+            # Step 2: Compute the result. This can also raise a ValueError (e.g., domain error).
             compute_out = self._compute(func, value, unit)
             return self._format_response(func, normalized, compute_out, error=None)
 
         except ValueError as e:
-            # validation or domain errors
-            return self._format_response(getattr(e, "function", "unknown"), query if isinstance(query, dict) else ("<json>" if isinstance(query, str) else None), {}, error=str(e))
+            # If normalization succeeded, 'normalized' will be a dict.
+            if normalized:
+                func = normalized.get("function", "unknown")
+                input_val = normalized
+            # If normalization failed, 'query' holds the original malformed input.
+            else:
+                func = "unknown"
+                # For consistency, we still create a dict for the 'input' field.
+                input_val = {"raw_query": query} if isinstance(query, str) else query
+
+            return self._format_response(func, input_val, {}, error=str(e))
         except Exception as e:
-            # unexpected errors
+            # Unexpected errors
             logger.exception("Unexpected error in TrigonometryTool: %s", e)
-            return self._format_response("unknown", query if isinstance(query, dict) else ("<json>" if isinstance(query, str) else None), {}, error=f"Unexpected error: {str(e)}")
+            input_val = {"raw_query": query} if isinstance(query, str) else query
+            return self._format_response("unknown", input_val, {}, error=f"Unexpected error: {str(e)}")
 
     async def _arun(self, query: Union[str, Dict[str, Any]]) -> str:
+        """Asynchronous execution entrypoint used by agents.
+
+        Args:
+            query: Either a JSON string or a dict with keys:
+                   'function': 'sin|cos|tan|asin|acos|atan',
+                   'value': a number,
+                   'unit': 'radians' or 'degrees' (optional).
+
+        Returns:
+            A JSON string containing the result of the computation,
+            including the original input and any errors.
         """
-        Asynchronous execution path. This uses a thread to run the synchronous
-        implementation—keeps implementation simple and compatible.
-        """
-        return await asyncio.to_thread(self._run, query)
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, self._run, query)
