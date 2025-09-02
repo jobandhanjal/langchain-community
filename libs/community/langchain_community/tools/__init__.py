@@ -21,6 +21,9 @@ import importlib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from langchain_community.tools.calendar import (
+        CalendarTool,
+    )
     from langchain_core.tools import (
         BaseTool as BaseTool,
     )
@@ -347,6 +350,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "CalendarTool",
     "BaseTool",
     "Tool",
     "tool",
