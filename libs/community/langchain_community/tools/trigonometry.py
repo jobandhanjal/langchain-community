@@ -156,10 +156,10 @@ class TrigonometryTool(BaseTool):
         """Synchronous execution entrypoint used by agents.
 
         Args:
-            query: Either a JSON string or a dict with keys:
-                   'function': 'sin|cos|tan|asin|acos|atan',
-                   'value': a number,
-                   'unit': 'radians' or 'degrees' (optional).
+            query: Either a JSON string or a dict with the following keys:
+                function: One of 'sin', 'cos', 'tan', 'asin', 'acos', or 'atan'.
+                value: A number to compute the trigonometric function for.
+                unit: Either 'radians' or 'degrees'. Optional, defaults to 'radians'.
 
         Returns:
             A JSON string containing the result of the computation,
@@ -199,10 +199,10 @@ class TrigonometryTool(BaseTool):
         """Asynchronous execution entrypoint used by agents.
 
         Args:
-            query: Either a JSON string or a dict with keys:
-                   'function': 'sin|cos|tan|asin|acos|atan',
-                   'value': a number,
-                   'unit': 'radians' or 'degrees' (optional).
+            query: Either a JSON string or a dict with the following keys:
+                function: One of 'sin', 'cos', 'tan', 'asin', 'acos', or 'atan'.
+                value: A number to compute the trigonometric function for.
+                unit: Either 'radians' or 'degrees'. Optional, defaults to 'radians'.
 
         Returns:
             A JSON string containing the result of the computation,
