@@ -1,14 +1,20 @@
 from __future__ import annotations
-from langchain.tools import BaseTool
+from langchain_community.tools import BaseTool
+from huggingface_hub import HfApi
 
 class HuggingFaceHubTool(BaseTool):
     """Base tool for interacting with the Hugging Face Hub."""
 
-    api_client: "HfApi"
+    api_client: HfApi
     task: str = ""
     top_k_results: int = 3
 
     def __init__(self, **kwargs):
+        """Initialize the Hugging Face tool.
+
+        Args:
+            **kwargs: Keyword arguments to be passed to the parent class constructor.
+        """
         super().__init__(**kwargs)
         try:
             from huggingface_hub import HfApi
@@ -19,7 +25,11 @@ class HuggingFaceHubTool(BaseTool):
             ) from e
 
     def _run(self, query: str) -> str:
-        """Use the tool."""
+        """Use the tool to search Hugging Face Hub.
+
+        Args:
+            query: The search query string to find models or datasets.
+        """
         try:
             if self.task == "models":
                 results_list = self.api_client.list_models(
@@ -44,11 +54,19 @@ class HuggingFaceHubTool(BaseTool):
 
             return "\n\n---\n\n".join(formatted_results)
 
+        except ConnectionError as e:
+            return f"Error: Failed to connect to HuggingFace API. {str(e)}"
+        except ValueError as e:
+            return f"Error: Invalid input to HuggingFace API. {str(e)}"
         except Exception as e:
-            return f"An error occurred: {e}"
+            return f"Unexpected error when calling HuggingFace API: {str(e)}"
 
     async def _arun(self, query: str) -> str:
-        """Use the tool asynchronously."""
+        """Use the tool asynchronously.
+        
+        Args:
+            query: The search query string to find models or datasets.
+        """
         import asyncio
         return await asyncio.get_running_loop().run_in_executor(
             None, self._run, query
